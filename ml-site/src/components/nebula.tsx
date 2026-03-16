@@ -1,51 +1,8 @@
-/** import { useRef, useMemo } from "react";
-import { Points, PointMaterial } from "@react-three/drei";
-import { useThree, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
-
-export default function Nebula () {
-  const { viewport } = useThree();
-
-  const r = useRef<any>(null);
-
-
-  useFrame((s) => {
-    if (!r.current) return;
-    const t = s.clock.getElapsedTime();
-
-    r.current.rotation.z = t * 0.03; // slow spin
-    r.current.rotation.x = Math.sin(t * 0.1) * 0.1; // breathing motion
-  });
-
-  const positions = useMemo(() => {
-    const arr = new Float32Array(2000);
-
-    for (let i = 0; i < 2000; i++) {
-      arr[i] = (Math.random() - 0.5) * 10; // nebula "radius"
-    }
-
-    return arr;
-  }, []);
-
-  return (
-    <group ref={r} > 
-        <Points positions={positions} >
-          <PointMaterial
-            transparent
-            color="#ffffff"
-            size={0.05}
-          />
-        </Points>
-    </group>
-  );
-} **/
-
 "use client"
 
 import { useMemo, useRef } from "react";
 import { extend, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { Text } from "@react-three/drei";
 
 class Material extends THREE.ShaderMaterial { 
   constructor () {
@@ -54,9 +11,9 @@ class Material extends THREE.ShaderMaterial {
       side: THREE.BackSide,
       uniforms: {
         time: { value: 0 },
-        color1: { value: new THREE.Color("#713afd") },
-        color2: { value: new THREE.Color("#7cf178") },  
-        color3: { value: new THREE.Color("#3e9bf9") },  
+        color1: { value: new THREE.Color("#6353df") },
+        color2: { value: new THREE.Color("#8d8de5") },  
+        color3: { value: new THREE.Color("#4a72f6") },  
       },
       vertexShader: `
         varying vec3 vPos;
@@ -125,10 +82,10 @@ class Material extends THREE.ShaderMaterial {
         }
 
         void main() {
-          float n = snoise(vPos * 0.3 + time * 0.02);
+          float n = snoise(vPos * 0.2 + time * 0.04);
           float intensity = smoothstep(0.0, 7.0, n);
           vec3 col = mix(mix(color1, color2, intensity), color3, intensity * intensity);
-          gl_FragColor = vec4(col, intensity * 0.7); 
+          gl_FragColor = vec4(col, intensity * 0.5); 
         }
       `
     });
@@ -149,10 +106,9 @@ export default function Nebula () {
 
   return (
     <group>
-      <mesh ref={r} material={material}>
-          <sphereGeometry args={[2, 60, 60]} />
+      <mesh position={[0, 0, -1]} ref={r} material={material}>
+          <sphereGeometry args={[5, 20, 20]} />
       </mesh>
-      <Text fontSize={0.1} position={[0, 0, -0.3]}>testing wow</Text>
     </group>
   );
 }

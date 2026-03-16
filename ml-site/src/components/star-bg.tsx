@@ -1,19 +1,19 @@
 "use client"
 
-import React from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, Stars } from "@react-three/drei";
-import Model from "./model";
+import { Environment } from "@react-three/drei";
 import Nebula from "./nebula";
+import Stars from "./stars";
+import Planet from "./planet";
 
 export default function StarBG () {
   return (
-    <Canvas className="bg-black w-screen h-screen" camera={{ position: [0, 0, 0] }} >
-        {/** <directionalLight position={[0, 3, 2]} intensity={3} />
-        <Environment preset="night" /> **/}
+    <Canvas className="bg-black w-screen h-screen" camera={{ position: [0, 0, 5], fov: 60, near: 0.1, far: 200 }} >
+        <directionalLight position={[-1, 2, 1]} intensity={3} />
+        <Environment preset="night" />
+        <Stars />
         <Nebula />
-
-        {/** <Model /> **/ }
+        <Planet />
     </Canvas>
   );
 }
