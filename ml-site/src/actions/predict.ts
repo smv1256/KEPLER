@@ -2,10 +2,13 @@
 
 export async function predict (formData : FormData): Promise<string> {
   try {
-    const body: any = Object.fromEntries(formData.entries());
+    const rawBody = Object.fromEntries(
+      formData.entries()
+    ) as Record<string, FormDataEntryValue>;
+    const body: Record<string, number | null> = {};
 
-    for (const d in body) {
-        body[d] = (body[d] === "") ? null : Number(body[d]);
+    for (const [key, value] of Object.entries(rawBody)) {
+        body[key] = value === "" ? null : Number(value);
     }
 
     const response = await fetch(process.env.EXOPLANET_API!, {
@@ -14,11 +17,14 @@ export async function predict (formData : FormData): Promise<string> {
       body: JSON.stringify(body),
     });
 
-    const pred = await response.json();
-    console.log(pred);
+    if (!response.ok) {
+      return "Prediction unavailable";
+    }
 
-    return pred.prediction;
+    const pred = await response.json();
+    return pred.prediction ?? "Prediction unavailable";
   } catch (err) {
-    return "Error";
+    console.error(err);
+    return "Prediction unavailable";
   }
 }
