@@ -372,7 +372,7 @@ export default function Site() {
               </h2>
               <p className="mx-auto mt-5 max-w-4xl text-base leading-8 text-slate-300">
                 This was a fun project of mine to turn a simple model into something more memorable. Check out 
-                the <a href="" target="_blank">source code here on GitHub</a>. If you want to see more projects like this, 
+                the <a href="https://github.com/smv1256/KEPLER" target="_blank">source code here on GitHub</a>. If you want to see more projects like this, 
                 or if you have any feedback on KEPLER, feel free to reach out on <a href="https://www.linkedin.com/in/smv1256/" target="_blank">LinkedIn</a>!
               </p>
             </div>
