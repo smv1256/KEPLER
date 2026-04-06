@@ -64,6 +64,28 @@ export default function Site() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
+    let maxVisibleHeight = 0;
+
+    const setVisibleHeight = () => {
+      const visibleHeight = window.visualViewport?.height ?? window.innerHeight;
+      maxVisibleHeight = Math.max(maxVisibleHeight, visibleHeight);
+
+      root.style.setProperty("--vh", `${visibleHeight * 0.01}px`);
+      root.style.setProperty("--vh-stable", `${maxVisibleHeight * 0.01}px`);
+    };
+
+    setVisibleHeight();
+    window.addEventListener("resize", setVisibleHeight);
+    window.visualViewport?.addEventListener("resize", setVisibleHeight);
+
+    return () => {
+      window.removeEventListener("resize", setVisibleHeight);
+      window.visualViewport?.removeEventListener("resize", setVisibleHeight);
+    };
+  }, []);
+
+  useEffect(() => {
     const transitTimer = window.setInterval(() => {
       setTransitPhase((current) => (current + 0.006) % 1);
     }, 70);

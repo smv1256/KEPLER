@@ -10,45 +10,48 @@ function Scene({ lowPower = false }: { lowPower?: boolean }) {
   const scrollRef = useRef(0);
   const targetScrollRef = useRef(0);
   const viewportHeightRef = useRef(0);
-  const lastWidthRef = useRef(0);
 
   useEffect(() => {
-    const updateViewportHeight = (force = false) => {
-      const nextHeight = window.innerHeight;
-      const widthChanged = Math.abs(window.innerWidth - lastWidthRef.current) > 40;
-      const heightChanged = Math.abs(nextHeight - viewportHeightRef.current);
+    const readViewportHeight = () => {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const stableVh = Number.parseFloat(rootStyles.getPropertyValue("--vh-stable"));
+      const liveVh = Number.parseFloat(rootStyles.getPropertyValue("--vh"));
+      const heightFromVar = (lowPower ? stableVh : liveVh) * 100;
 
-      if (
-        force ||
-        viewportHeightRef.current === 0 ||
-        widthChanged ||
-        heightChanged > 160
-      ) {
-        viewportHeightRef.current = nextHeight;
-        lastWidthRef.current = window.innerWidth;
+      if (Number.isFinite(heightFromVar) && heightFromVar > 0) {
+        viewportHeightRef.current = heightFromVar;
+        return;
       }
+
+      viewportHeightRef.current =
+        window.visualViewport?.height ?? window.innerHeight;
     };
 
     const onScroll = () => {
       const docHeight = document.documentElement.scrollHeight;
-      const viewportHeight = viewportHeightRef.current || window.innerHeight;
+      const viewportHeight =
+        viewportHeightRef.current ||
+        window.visualViewport?.height ||
+        window.innerHeight;
       const total = Math.max(docHeight - viewportHeight, 1);
       targetScrollRef.current = THREE.MathUtils.clamp(window.scrollY / total, 0, 1);
     };
 
     const onResize = () => {
-      updateViewportHeight(lowPower);
+      readViewportHeight();
       onScroll();
     };
 
-    updateViewportHeight(true);
+    readViewportHeight();
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("resize", onResize);
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
     };
   }, [lowPower]);
 

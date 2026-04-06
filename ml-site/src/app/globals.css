@@ -6,6 +6,8 @@
   --muted: #aeb7dc;
   --line: rgba(180, 196, 255, 0.16);
   --cyan: #85e2ff;
+  --vh: 1vh;
+  --vh-stable: 1vh;
   --font-sans: var(--font-inter), "Segoe UI", Helvetica, Arial, sans-serif;
   --font-body: var(--font-lato), var(--font-inter), "Segoe UI", Helvetica, Arial, sans-serif;
   --font-display: var(--font-inter), "Courier New", monospace;
