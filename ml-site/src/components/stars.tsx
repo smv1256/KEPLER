@@ -13,9 +13,8 @@ function createSeededRandom(seed: number) {
   };
 }
 
-function createStarsGeometry() {
+function createStarsGeometry(starCount: number) {
   const random = createSeededRandom(4242);
-  const starCount = 1800;
   const positions = new Float32Array(starCount * 3);
   const colors = new Float32Array(starCount * 3);
 
@@ -51,29 +50,35 @@ function createStarsGeometry() {
   return next;
 }
 
-export default function Stars({ scroll }: { scroll: number }) {
+export default function Stars({
+  scroll,
+  lowPower = false,
+}: {
+  scroll: number;
+  lowPower?: boolean;
+}) {
   const pointsRef = useRef<THREE.Points | null>(null);
-  const [geometry] = useState(createStarsGeometry);
+  const [geometry] = useState(() => createStarsGeometry(lowPower ? 700 : 1800));
 
   const material = useMemo(
     () =>
       new THREE.PointsMaterial({
-        size: 0.06,
+        size: lowPower ? 0.05 : 0.06,
         sizeAttenuation: true,
         transparent: true,
-        opacity: 0.9,
+        opacity: lowPower ? 0.72 : 0.9,
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
-    []
+    [lowPower]
   );
 
   useFrame((state) => {
     if (!pointsRef.current) return;
-    pointsRef.current.rotation.y = state.clock.elapsedTime * 0.01;
-    pointsRef.current.rotation.x = -0.06 + scroll * 0.22;
-    pointsRef.current.position.y = -scroll * 1.8;
+    pointsRef.current.rotation.y = state.clock.elapsedTime * (lowPower ? 0.005 : 0.01);
+    pointsRef.current.rotation.x = -0.06 + scroll * (lowPower ? 0.14 : 0.22);
+    pointsRef.current.position.y = -scroll * (lowPower ? 1.1 : 1.8);
   });
 
   return <points ref={pointsRef} geometry={geometry} material={material} />;

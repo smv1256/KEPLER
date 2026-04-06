@@ -179,13 +179,22 @@ class RingMaterial extends THREE.ShaderMaterial {
   }
 }
 
-export default function Planet({ scroll }: { scroll: number }) {
+export default function Planet({
+  scroll,
+  lowPower = false,
+}: {
+  scroll: number;
+  lowPower?: boolean;
+}) {
   const ref = useRef<THREE.Group | null>(null);
   const meshRef = useRef<THREE.Mesh<THREE.SphereGeometry, PlanetMaterial> | null>(
     null
   );
   const [material] = useState(() => new PlanetMaterial());
-  const ringGeometry = useMemo(() => new THREE.RingGeometry(2.5, 3.45, 220), []);
+  const ringGeometry = useMemo(
+    () => new THREE.RingGeometry(2.5, 3.45, lowPower ? 96 : 220),
+    [lowPower]
+  );
   const backRingMaterial = useMemo(() => new RingMaterial(0.42, false), []);
   const frontRingMaterial = useMemo(() => new RingMaterial(0.88, true), []);
 
@@ -193,8 +202,8 @@ export default function Planet({ scroll }: { scroll: number }) {
     if (!ref.current || !meshRef.current) return;
 
     meshRef.current.material.uniforms.time.value = state.clock.elapsedTime;
-    ref.current.rotation.y += 0.0017;
-    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.18) * 0.05;
+    ref.current.rotation.y += lowPower ? 0.001 : 0.0017;
+    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * (lowPower ? 0.12 : 0.18)) * 0.05;
     ref.current.position.x = THREE.MathUtils.lerp(
       ref.current.position.x,
       1.9 - scroll * 2.75,
@@ -218,17 +227,17 @@ export default function Planet({ scroll }: { scroll: number }) {
         geometry={ringGeometry}
         material={backRingMaterial}
         rotation={[1.01, 0.28, 0.14]}
-        scale={[0.6, 0.92, 0.6]}
+        scale={lowPower ? [0.58, 0.9, 0.58] : [0.6, 0.92, 0.6]}
         renderOrder={0}
       />
       <mesh ref={meshRef} material={material} position={[0, 0.2, 0]} rotation={[-0.5, 0.4, 0]} renderOrder={1}>
-        <sphereGeometry args={[1.4, 128, 128]} />
+        <sphereGeometry args={[1.4, lowPower ? 56 : 128, lowPower ? 56 : 128]} />
       </mesh>
       <mesh
         geometry={ringGeometry}
         material={frontRingMaterial}
         rotation={[1.01, 0.28, 0.14]}
-        scale={[0.6, 0.92, 0.6]}
+        scale={lowPower ? [0.58, 0.9, 0.58] : [0.6, 0.92, 0.6]}
         renderOrder={2}
       />
     </group>
