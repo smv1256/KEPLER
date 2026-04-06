@@ -3,18 +3,14 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { predict } from "../actions/predict";
-import {
-  emptyValues,
-  fieldSections,
-  presets,
-  type PredictorValues,
-} from "./predictor-config";
+import { emptyValues, fieldSections, presets, type PredictorValues } from "./predictor-config";
 import PredictorSection from "./predictor-section";
 
 export default function PredictorPanel() {
-  const [values, setValues] = useState<PredictorValues>(emptyValues);
+  const defaultPreset = presets.find((preset) => preset.name === "Pluto test") ?? presets[0];
+  const [values, setValues] = useState<PredictorValues>(defaultPreset.values);
   const [result, setResult] = useState<string | null>(null);
-  const [activePreset, setActivePreset] = useState<string>("");
+  const [activePreset, setActivePreset] = useState<string>(defaultPreset.name);
   const [openSections, setOpenSections] = useState<string[]>(["transit"]);
   const [flashResult, setFlashResult] = useState(false);
   const [isPending, startTransition] = useTransition();
