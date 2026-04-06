@@ -78,8 +78,15 @@ export default function Stars({
     if (!pointsRef.current) return;
     const scroll = scrollRef.current ?? 0;
     pointsRef.current.rotation.y = state.clock.elapsedTime * (lowPower ? 0.005 : 0.01);
-    pointsRef.current.rotation.x = -0.06 + scroll * (lowPower ? 0.07 : 0.22);
-    pointsRef.current.position.y = -scroll * (lowPower ? 0.5 : 1.8);
+
+    if (lowPower) {
+      pointsRef.current.rotation.x = -0.04 + Math.sin(state.clock.elapsedTime * 0.08) * 0.01;
+      pointsRef.current.position.y = Math.cos(state.clock.elapsedTime * 0.06) * 0.08;
+      return;
+    }
+
+    pointsRef.current.rotation.x = -0.06 + scroll * 0.22;
+    pointsRef.current.position.y = -scroll * 1.8;
   });
 
   return <points ref={pointsRef} geometry={geometry} material={material} />;

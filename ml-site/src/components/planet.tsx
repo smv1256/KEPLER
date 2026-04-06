@@ -204,20 +204,40 @@ export default function Planet({
 
     meshRef.current.material.uniforms.time.value = state.clock.elapsedTime;
     ref.current.rotation.y += lowPower ? 0.001 : 0.0017;
-    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * (lowPower ? 0.12 : 0.18)) * 0.05;
+    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * (lowPower ? 0.12 : 0.18)) * (lowPower ? 0.025 : 0.05);
+
+    if (lowPower) {
+      ref.current.position.x = THREE.MathUtils.lerp(
+        ref.current.position.x,
+        1.52 + Math.sin(state.clock.elapsedTime * 0.16) * 0.03,
+        0.035
+      );
+      ref.current.position.y = THREE.MathUtils.lerp(
+        ref.current.position.y,
+        0.56 + Math.cos(state.clock.elapsedTime * 0.14) * 0.025,
+        0.035
+      );
+      ref.current.position.z = THREE.MathUtils.lerp(
+        ref.current.position.z,
+        -0.18,
+        0.035
+      );
+      return;
+    }
+
     ref.current.position.x = THREE.MathUtils.lerp(
       ref.current.position.x,
-      lowPower ? 1.6 - scroll * 1.15 : 1.9 - scroll * 2.75,
+      1.9 - scroll * 2.75,
       0.05
     );
     ref.current.position.y = THREE.MathUtils.lerp(
       ref.current.position.y,
-      lowPower ? 0.62 - scroll * 1.35 : 0.7 - scroll * 3.2,
+      0.7 - scroll * 3.2,
       0.05
     );
     ref.current.position.z = THREE.MathUtils.lerp(
       ref.current.position.z,
-      lowPower ? -0.2 + scroll * 0.24 : -0.3 + scroll * 0.8,
+      -0.3 + scroll * 0.8,
       0.05
     );
   });
