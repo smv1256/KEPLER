@@ -1,204 +1,236 @@
-"use client"
+"use client";
 
-import { useMemo, useRef } from "react"
-import { extend, useFrame } from "@react-three/fiber"
-import * as THREE from "three"
+import { useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
 class PlanetMaterial extends THREE.ShaderMaterial {
   constructor() {
     super({
       uniforms: {
         time: { value: 0 },
-        color1: { value: new THREE.Color("#6482e6") },
-        color2: { value: new THREE.Color("#3657b9") },
-        color3: { value: new THREE.Color("#6353df") },
-        color4: { value: new THREE.Color("#d6fffd") },  
-        color5: { value: new THREE.Color("#84a6e6") }, 
-        lightDir: { value: new THREE.Vector3(1,1,1).normalize() }
+        colorA: { value: new THREE.Color("#0f093f") },
+        colorB: { value: new THREE.Color("#21177b") },
+        colorC: { value: new THREE.Color("#464bd9") },
+        colorD: { value: new THREE.Color("#22c6f1") },
+        colorE: { value: new THREE.Color("#66e9ff") },
       },
-
       vertexShader: `
         varying vec3 vPos;
         varying vec3 vNormal;
-        varying vec3 vWorldPos;
 
         void main() {
           vPos = position;
-          vNormal = normal;
-          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-
       fragmentShader: `
         varying vec3 vPos;
         varying vec3 vNormal;
-        varying vec3 vWorldPos;
 
         uniform float time;
-        uniform vec3 color1;
-        uniform vec3 color2;
-        uniform vec3 color3;
-        uniform vec3 color4;
-        uniform vec3 color5;
-        uniform vec3 lightDir;
+        uniform vec3 colorA;
+        uniform vec3 colorB;
+        uniform vec3 colorC;
+        uniform vec3 colorD;
+        uniform vec3 colorE;
 
-        vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
-        vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
-        vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
-
-        float snoise(vec3 v){
-          const vec2 C=vec2(1.0/6.0,1.0/3.0);
-          const vec4 D=vec4(0.0,0.5,1.0,2.0);
-
-          vec3 i=floor(v+dot(v,C.yyy));
-          vec3 x0=v-i+dot(i,C.xxx);
-
-          vec3 g=step(x0.yzx,x0.xyz);
-          vec3 l=1.0-g;
-          vec3 i1=min(g.xyz,l.zxy);
-          vec3 i2=max(g.xyz,l.zxy);
-
-          vec3 x1=x0-i1+C.xxx;
-          vec3 x2=x0-i2+C.yyy;
-          vec3 x3=x0-D.yyy;
-
-          i=mod289(i);
-          vec4 p=permute(
-            permute(
-              permute(
-                i.z+vec4(0.0,i1.z,i2.z,1.0)
-              )+i.y+vec4(0.0,i1.y,i2.y,1.0)
-            )+i.x+vec4(0.0,i1.x,i2.x,1.0)
-          );
-
-          vec4 j=p-49.0*floor(p/49.0);
-          vec4 x_=floor(j/7.0);
-          vec4 y_=floor(j-7.0*x_);
-          vec4 x=x_*0.142857142857+0.0714285714286;
-          vec4 y=y_*0.142857142857+0.0714285714286;
-          vec4 h=1.0-abs(x)-abs(y);
-
-          vec4 b0=vec4(x.xy,y.xy);
-          vec4 b1=vec4(x.zw,y.zw);
-
-          vec4 s0=floor(b0)*2.0+1.0;
-          vec4 s1=floor(b1)*2.0+1.0;
-          vec4 sh=-step(h,vec4(0.0));
-
-          vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;
-          vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
-
-          vec3 p0=vec3(a0.xy,h.x);
-          vec3 p1=vec3(a0.zw,h.y);
-          vec3 p2=vec3(a1.xy,h.z);
-          vec3 p3=vec3(a1.zw,h.w);
-
-          vec4 norm=inversesqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
-          p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
-
-          vec4 m=max(0.5-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);
-          m=m*m;
-
-          return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+        float hash(vec3 p) {
+          return fract(sin(dot(p, vec3(127.1, 311.7, 191.3))) * 43758.5453123);
         }
 
-        float fbm(vec3 p){
-          float v=0.0;
-          float a=0.5;
-          vec3 shift = vec3(100.0);
+        float noise(vec3 p) {
+          vec3 i = floor(p);
+          vec3 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
 
-          for(int i=0;i<6;i++){
-            v+=a*snoise(p);
-            p = p * 2.0 + shift;
-            a*=0.5;
+          float n000 = hash(i + vec3(0.0, 0.0, 0.0));
+          float n100 = hash(i + vec3(1.0, 0.0, 0.0));
+          float n010 = hash(i + vec3(0.0, 1.0, 0.0));
+          float n110 = hash(i + vec3(1.0, 1.0, 0.0));
+          float n001 = hash(i + vec3(0.0, 0.0, 1.0));
+          float n101 = hash(i + vec3(1.0, 0.0, 1.0));
+          float n011 = hash(i + vec3(0.0, 1.0, 1.0));
+          float n111 = hash(i + vec3(1.0, 1.0, 1.0));
+
+          float nx00 = mix(n000, n100, f.x);
+          float nx10 = mix(n010, n110, f.x);
+          float nx01 = mix(n001, n101, f.x);
+          float nx11 = mix(n011, n111, f.x);
+          float nxy0 = mix(nx00, nx10, f.y);
+          float nxy1 = mix(nx01, nx11, f.y);
+          return mix(nxy0, nxy1, f.z);
+        }
+
+        float fbm(vec3 p) {
+          float value = 0.0;
+          float amplitude = 0.5;
+          for (int i = 0; i < 5; i++) {
+            value += amplitude * noise(p);
+            p *= 1.8;
+            amplitude *= 0.55;
           }
-
-          return v;
+          return value;
         }
 
-        float ridgedNoise(vec3 p) {
-          return 1.0 - abs(snoise(p));
+        void main() {
+          vec3 p = vPos * 1.53;
+          float swirlBase = fbm(vec3(vPos.x * 2.2, vPos.y * 2.6 + time * 0.03, vPos.z * 2.2));
+          float ribbons = sin((vPos.y + swirlBase * 0.65) * 15.0 + vPos.x * 2.8);
+          float ribbons2 = sin((vPos.y - swirlBase * 0.35) * 23.0 - vPos.z * 1.8);
+          float marbling = fbm(p * 2.4 + vec3(ribbons * 0.6, ribbons2 * 0.2, 0.0));
+          float capNoise = fbm(p * 1.5 + vec3(0.0, time * 0.02, 0.0));
+          float polarCap = smoothstep(0.18, 0.82, vPos.y + capNoise * 0.35);
+          float bandField = smoothstep(-0.85, 0.95, ribbons * 0.7 + ribbons2 * 0.35 + marbling * 0.9);
+          float whirl = smoothstep(0.45, 0.95, marbling + abs(ribbons2) * 0.25);
+          float glow = pow(1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0), 2.5);
+          float light = dot(normalize(vNormal), normalize(vec3(-0.28, 0.75, 1.0))) * 0.5 + 0.5;
+
+          vec3 color = mix(colorA, colorB, bandField);
+          color = mix(color, colorC, whirl);
+          color = mix(color, colorD, smoothstep(0.58, 1.0, polarCap + marbling * 0.2));
+          color = mix(color, colorE, smoothstep(0.75, 1.0, polarCap));
+          color *= 0.46 + light * 0.74;
+          color += colorD * glow * 0.14;
+          color = mix(color, floor(color * 7.0) / 7.0, 0.28);
+
+          gl_FragColor = vec4(color, 1.0);
         }
-
-        float ridgedFbm(vec3 p) {
-          float v = 0.0;
-          float a = 0.5;
-          vec3 shift = vec3(100.0);
-
-          for(int i=0;i<5;i++){
-            v += a * ridgedNoise(p);
-            p = p * 2.0 + shift;
-            a *= 0.5;
-          }
-
-          return v;
-        }
-
-        void main(){
-          vec3 p = vPos * 2.0;
-
-          float terrain1 = fbm(p * 0.4 + time * 0.01);
-          float terrain2 = ridgedFbm(p * 2.8 - time * 0.005);
-          float terrain3 = snoise(p * 1.6 + time * 0.02) * 0.3;
-
-          float combinedTerrain = terrain1 * 0.7 + terrain2 * 0.2 + terrain3 * 0.1;
-
-          float biome = snoise(vPos * 0.3 + time * 0.003);
-          float height = smoothstep(-0.3, 0.8, combinedTerrain + biome * 0.2);
-
-          vec3 col;
-          if (height < 0.3) {
-            col = mix(color1, color2, height * 3.33);
-          } else if (height < 0.6) {
-            col = mix(color2, color3, (height - 0.3) * 3.33);
-          } else if (height < 0.8) {
-            col = mix(color3, color4, (height - 0.6) * 5.0);
-          } else {
-            col = mix(color4, color5, (height - 0.8) * 5.0);
-          }
-
-          if (biome > 0.3) {
-            col = mix(col, color5, biome * 0.3);
-          }
-
-          vec3 normal = normalize(vNormal);
-          float light = max(dot(normal, lightDir), 0.0);
-          float shadow = smoothstep(0.0, 0.2, light);
-
-          float rim = pow(1.0 - dot(normal, vec3(0,0,1)), 4.0);
-          vec3 rimColor = mix(color3, color5, 0.5);
-
-          col *= 0.3 + shadow * 0.7;
-          col += rim * rimColor * 0.1;
-
-          float sparkle = pow(max(dot(normal, normalize(vec3(1,1,1))), 0.0), 20.0);
-          col += sparkle * color5 * 0.05;
-
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `
-    })
+      `,
+    });
   }
 }
 
-extend({ PlanetMaterial })
+class RingMaterial extends THREE.ShaderMaterial {
+  constructor(opacity: number, showFrontHalf: boolean) {
+    super({
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.NormalBlending,
+      uniforms: {
+        opacityScale: { value: opacity },
+        frontHalf: { value: showFrontHalf ? 1 : 0 },
+        colorA: { value: new THREE.Color("#464bd9") },
+        colorB: { value: new THREE.Color("#22c6f1") },
+        colorC: { value: new THREE.Color("#66e9ff") },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        varying float vViewZ;
+        varying float vCenterViewZ;
 
-export default function Planet() {
-  const ref = useRef<THREE.Mesh>(null)
-  const material = useMemo(() => new PlanetMaterial(), [])
+        void main() {
+          vUv = uv;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vViewZ = mvPosition.z;
+          vCenterViewZ = (modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).z;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        varying float vViewZ;
+        varying float vCenterViewZ;
+
+        uniform float opacityScale;
+        uniform int frontHalf;
+        uniform vec3 colorA;
+        uniform vec3 colorB;
+        uniform vec3 colorC;
+
+        float ringBand(float radius, float center, float width) {
+          return 1.0 - smoothstep(width, width + 0.012, abs(radius - center));
+        }
+
+        void main() {
+          bool isFront = vViewZ > vCenterViewZ;
+          if ((frontHalf == 1 && !isFront) || (frontHalf == 0 && isFront)) {
+            discard;
+          }
+
+          vec2 p = vUv - 0.5;
+          float radius = length(p) * 1.5;
+
+          float edgeFade = smoothstep(0.28, 0.36, radius) * (1.0 - smoothstep(0.92, 1.0, radius));
+
+          float broadBands =
+              ringBand(radius, 0.54, 0.06) * 0.8 +
+              ringBand(radius, 0.68, 0.05) * 0.55 +
+              ringBand(radius, 0.80, 0.045) * 0.95 +
+              ringBand(radius, 0.90, 0.03) * 0.6;
+
+          float fineBands =
+              0.5 + 0.5 * sin(radius * 160.0) +
+              0.5 + 0.5 * sin(radius * 230.0 + 0.8);
+
+          float density = broadBands * edgeFade;
+          float alpha = density * (0.75 + fineBands * 0.18) * opacityScale;
+
+          vec3 color = mix(colorC, colorB, smoothstep(0.35, 0.82, density));
+          color = mix(color, colorA, smoothstep(0.72, 1.0, density));
+
+          if (alpha < 0.01) discard;
+          gl_FragColor = vec4(color, alpha);
+        }
+      `,
+    });
+  }
+}
+
+export default function Planet({ scroll }: { scroll: number }) {
+  const ref = useRef<THREE.Group | null>(null);
+  const meshRef = useRef<THREE.Mesh<THREE.SphereGeometry, PlanetMaterial> | null>(
+    null
+  );
+  const [material] = useState(() => new PlanetMaterial());
+  const ringGeometry = useMemo(() => new THREE.RingGeometry(2.5, 3.45, 220), []);
+  const backRingMaterial = useMemo(() => new RingMaterial(0.42, false), []);
+  const frontRingMaterial = useMemo(() => new RingMaterial(0.88, true), []);
 
   useFrame((state) => {
-    if (!ref.current) return
+    if (!ref.current || !meshRef.current) return;
 
-    ref.current.rotation.y += 0.002
-    material.uniforms.time.value = state.clock.elapsedTime
-  })
+    meshRef.current.material.uniforms.time.value = state.clock.elapsedTime;
+    ref.current.rotation.y += 0.0017;
+    ref.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.18) * 0.05;
+    ref.current.position.x = THREE.MathUtils.lerp(
+      ref.current.position.x,
+      1.9 - scroll * 2.75,
+      0.05
+    );
+    ref.current.position.y = THREE.MathUtils.lerp(
+      ref.current.position.y,
+      0.7 - scroll * 3.2,
+      0.05
+    );
+    ref.current.position.z = THREE.MathUtils.lerp(
+      ref.current.position.z,
+      -0.3 + scroll * 0.8,
+      0.05
+    );
+  });
 
   return (
-    <mesh ref={ref} material={material}>
-      <sphereGeometry args={[1.5, 256, 256]} />
-    </mesh>
-  )
+    <group ref={ref} position={[1.9, 0.7, -0.3]}>
+      <mesh
+        geometry={ringGeometry}
+        material={backRingMaterial}
+        rotation={[1.01, 0.28, 0.14]}
+        scale={[0.6, 0.92, 0.6]}
+        renderOrder={0}
+      />
+      <mesh ref={meshRef} material={material} position={[0, 0.2, 0]} rotation={[-0.5, 0.4, 0]} renderOrder={1}>
+        <sphereGeometry args={[1.4, 128, 128]} />
+      </mesh>
+      <mesh
+        geometry={ringGeometry}
+        material={frontRingMaterial}
+        rotation={[1.01, 0.28, 0.14]}
+        scale={[0.6, 0.92, 0.6]}
+        renderOrder={2}
+      />
+    </group>
+  );
 }
