@@ -52,8 +52,6 @@ function Scene({ lowPower = false }: { lowPower?: boolean }) {
     };
   }, [lowPower]);
 
-  const scroll = scrollRef.current;
-
   useFrame((state) => {
     scrollRef.current = THREE.MathUtils.lerp(
       scrollRef.current,
@@ -63,13 +61,18 @@ function Scene({ lowPower = false }: { lowPower?: boolean }) {
 
     const currentScroll = scrollRef.current;
     const cameraLerp = lowPower ? 0.028 : 0.04;
+    const cameraX = lowPower ? currentScroll * 0.72 - 0.14 : currentScroll * 1.5 - 0.3;
+    const cameraY = lowPower ? -currentScroll * 0.62 : -currentScroll * 1.4;
+    const cameraZ = lowPower ? 5.2 - currentScroll * 0.42 : 5.2 - currentScroll * 1.1;
+    const lookAtX = lowPower ? 0.15 + currentScroll * 0.12 : 0.15 + currentScroll * 0.3;
+    const lookAtY = lowPower ? 0.1 - currentScroll * 0.08 : 0.1 - currentScroll * 0.2;
 
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, currentScroll * 1.5 - 0.3, cameraLerp);
-    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, -currentScroll * 1.4, cameraLerp);
-    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, 5.2 - currentScroll * 1.1, cameraLerp);
+    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, cameraX, cameraLerp);
+    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, cameraY, cameraLerp);
+    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, cameraZ, cameraLerp);
     
-    state.camera.lookAt(0.15 + currentScroll * 0.3, 0.1 - currentScroll * 0.2, 0);
-});
+    state.camera.lookAt(lookAtX, lookAtY, 0);
+  });
 
   return (
     <>
@@ -77,8 +80,8 @@ function Scene({ lowPower = false }: { lowPower?: boolean }) {
       <ambientLight intensity={lowPower ? 0.52 : 0.6} color="#88aaff" />
       <directionalLight position={[3, 2, 4]} intensity={lowPower ? 1.1 : 1.4} color="#9bd8ff" />
       {!lowPower ? <pointLight position={[-5, -3, -2]} intensity={1.8} color="#8f73ff" /> : null}
-      <Stars scroll={scroll} lowPower={lowPower} />
-      <Planet scroll={scroll} lowPower={lowPower} />
+      <Stars scrollRef={scrollRef} lowPower={lowPower} />
+      <Planet scrollRef={scrollRef} lowPower={lowPower} />
     </>
   );
 }

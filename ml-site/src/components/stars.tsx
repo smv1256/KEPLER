@@ -51,10 +51,10 @@ function createStarsGeometry(starCount: number) {
 }
 
 export default function Stars({
-  scroll,
+  scrollRef,
   lowPower = false,
 }: {
-  scroll: number;
+  scrollRef: React.RefObject<number>;
   lowPower?: boolean;
 }) {
   const pointsRef = useRef<THREE.Points | null>(null);
@@ -76,9 +76,10 @@ export default function Stars({
 
   useFrame((state) => {
     if (!pointsRef.current) return;
+    const scroll = scrollRef.current ?? 0;
     pointsRef.current.rotation.y = state.clock.elapsedTime * (lowPower ? 0.005 : 0.01);
-    pointsRef.current.rotation.x = -0.06 + scroll * (lowPower ? 0.14 : 0.22);
-    pointsRef.current.position.y = -scroll * (lowPower ? 1.1 : 1.8);
+    pointsRef.current.rotation.x = -0.06 + scroll * (lowPower ? 0.07 : 0.22);
+    pointsRef.current.position.y = -scroll * (lowPower ? 0.5 : 1.8);
   });
 
   return <points ref={pointsRef} geometry={geometry} material={material} />;

@@ -180,10 +180,10 @@ class RingMaterial extends THREE.ShaderMaterial {
 }
 
 export default function Planet({
-  scroll,
+  scrollRef,
   lowPower = false,
 }: {
-  scroll: number;
+  scrollRef: React.RefObject<number>;
   lowPower?: boolean;
 }) {
   const ref = useRef<THREE.Group | null>(null);
@@ -200,23 +200,24 @@ export default function Planet({
 
   useFrame((state) => {
     if (!ref.current || !meshRef.current) return;
+    const scroll = scrollRef.current ?? 0;
 
     meshRef.current.material.uniforms.time.value = state.clock.elapsedTime;
     ref.current.rotation.y += lowPower ? 0.001 : 0.0017;
     ref.current.rotation.z = Math.sin(state.clock.elapsedTime * (lowPower ? 0.12 : 0.18)) * 0.05;
     ref.current.position.x = THREE.MathUtils.lerp(
       ref.current.position.x,
-      1.9 - scroll * 2.75,
+      lowPower ? 1.6 - scroll * 1.15 : 1.9 - scroll * 2.75,
       0.05
     );
     ref.current.position.y = THREE.MathUtils.lerp(
       ref.current.position.y,
-      0.7 - scroll * 3.2,
+      lowPower ? 0.62 - scroll * 1.35 : 0.7 - scroll * 3.2,
       0.05
     );
     ref.current.position.z = THREE.MathUtils.lerp(
       ref.current.position.z,
-      -0.3 + scroll * 0.8,
+      lowPower ? -0.2 + scroll * 0.24 : -0.3 + scroll * 0.8,
       0.05
     );
   });
