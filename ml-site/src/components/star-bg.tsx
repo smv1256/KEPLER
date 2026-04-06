@@ -1,37 +1,75 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import Planet from "./planet";
 import Stars from "./stars";
 
 function Scene({ lowPower = false }: { lowPower?: boolean }) {
-  const [scroll, setScroll] = useState(0);
+  const scrollRef = useRef(0);
+  const targetScrollRef = useRef(0);
+  const viewportHeightRef = useRef(0);
+  const lastWidthRef = useRef(0);
 
   useEffect(() => {
-    const onScroll = () => {
-      const total = document.body.scrollHeight - window.innerHeight;
-      setScroll(total > 0 ? window.scrollY / total : 0);
+    const updateViewportHeight = (force = false) => {
+      const nextHeight = window.innerHeight;
+      const widthChanged = Math.abs(window.innerWidth - lastWidthRef.current) > 40;
+      const heightChanged = Math.abs(nextHeight - viewportHeightRef.current);
+
+      if (
+        force ||
+        viewportHeightRef.current === 0 ||
+        widthChanged ||
+        heightChanged > 160
+      ) {
+        viewportHeightRef.current = nextHeight;
+        lastWidthRef.current = window.innerWidth;
+      }
     };
 
+    const onScroll = () => {
+      const docHeight = document.documentElement.scrollHeight;
+      const viewportHeight = viewportHeightRef.current || window.innerHeight;
+      const total = Math.max(docHeight - viewportHeight, 1);
+      targetScrollRef.current = THREE.MathUtils.clamp(window.scrollY / total, 0, 1);
+    };
+
+    const onResize = () => {
+      updateViewportHeight(lowPower);
+      onScroll();
+    };
+
+    updateViewportHeight(true);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    window.addEventListener("resize", onResize);
 
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", onResize);
     };
-  }, []);
+  }, [lowPower]);
+
+  const scroll = scrollRef.current;
 
   useFrame((state) => {
+    scrollRef.current = THREE.MathUtils.lerp(
+      scrollRef.current,
+      targetScrollRef.current,
+      lowPower ? 0.08 : 0.11
+    );
+
+    const currentScroll = scrollRef.current;
     const cameraLerp = lowPower ? 0.028 : 0.04;
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, scroll * 1.5 - 0.3, cameraLerp);
-    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, -scroll * 1.4, cameraLerp);
-    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, 5.2 - scroll * 1.1, cameraLerp);
-    state.camera.lookAt(0.15 + scroll * 0.3, 0.1 - scroll * 0.2, 0);
-  });
+
+    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, currentScroll * 1.5 - 0.3, cameraLerp);
+    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, -currentScroll * 1.4, cameraLerp);
+    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, 5.2 - currentScroll * 1.1, cameraLerp);
+    
+    state.camera.lookAt(0.15 + currentScroll * 0.3, 0.1 - currentScroll * 0.2, 0);
+});
 
   return (
     <>
